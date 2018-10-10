@@ -118,19 +118,19 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
         """
         pass
 
-    def handleConnected(self):
+    def connected(self):
         """
           Called when a websocket client connects to the server.
         """
         pass
 
-    def handleClose(self):
+    def handle_close(self):
         """
           Called when a websocket server gets a Close frame from a client.
         """
         pass
 
-    def _handlePacket(self):  # pylint: disable=too-many-branches, too-many-statements
+    def _handle_packet(self):  # pylint: disable=too-many-branches, too-many-statements
         if self.opcode == CLOSE:
             pass
         elif self.opcode == STREAM:
@@ -233,7 +233,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
 
                 self.handle()
 
-    def _handleData(self):
+    def _handle_data(self):
         # do the HTTP header and handshake
         if self.handshaked is False:
             data = self.client.recv(self.headertoread)
@@ -255,10 +255,10 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
                         key = self.request.headers['Sec-WebSocket-Key']
                         k = key.encode('ascii') + GUID_STR.encode('ascii')
                         k_s = base64.b64encode(hashlib.sha1(k).digest()).decode('ascii')
-                        hStr = HANDSHAKE_STR % {'acceptstr': k_s}
-                        self.sendq.append((BINARY, hStr.encode('ascii')))
+                        hs = HANDSHAKE_STR % {'acceptstr': k_s}
+                        self.sendq.append((BINARY, hs.encode('ascii')))
                         self.handshaked = True
-                        self.handleConnected()
+                        self.connected()
                     except Exception as e:
                         raise Exception('handshake failed: {}'.format(e))
 
@@ -270,10 +270,10 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
 
             if VER >= 3:
                 for d in data:
-                    self._parseMessage(d)
+                    self._parse_message(d)
             else:
                 for d in data:
-                    self._parseMessage(ord(d))
+                    self._parse_message(ord(d))
 
     def close(self, status=1000, reason=u''):
         """
@@ -296,7 +296,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
         finally:
             self.closed = True
 
-    def _sendBuffer(self, buff, send_all=False):
+    def _send_buffer(self, buff, send_all=False):
         size = len(buff)
         tosend = size
         already_sent = 0
@@ -322,7 +322,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
 
         return None
 
-    def sendFragmentStart(self, data):
+    def send_fragment_start(self, data):
         """
             Send the start of a data fragment stream to a websocket client.
             Subsequent data should be sent using sendFragment().
@@ -337,7 +337,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
 
         self._send_message(True, opcode, data)
 
-    def sendFragment(self, data):
+    def send_fragment(self, data):
         """
             see sendFragmentStart()
 
@@ -346,7 +346,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
         """
         self._send_message(True, STREAM, data)
 
-    def sendFragmentEnd(self, data):
+    def send_fragment_end(self, data):
         """
           see sendFragmentEnd()
 
@@ -401,7 +401,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
 
         self.sendq.append((opcode, payload))
 
-    def _parseMessage(self, byte):  # pylint: disable=too-many-branches, too-many-statements
+    def _parse_message(self, byte):  # pylint: disable=too-many-branches, too-many-statements
         # read in the header
         if self.state == HEADERB1:
             self.fin = byte & 0x80
@@ -436,7 +436,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
                     # if there is no mask and no payload we are done
                     if self.length <= 0:
                         try:
-                            self._handlePacket()
+                            self._handle_packet()
                         finally:
                             self.state = HEADERB1
                             self.data = bytearray()
@@ -468,7 +468,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
                     # if there is no mask and no payload we are done
                     if self.length <= 0:
                         try:
-                            self._handlePacket()
+                            self._handle_packet()
                         finally:
                             self.state = HEADERB1
                             self.data = bytearray()
@@ -494,7 +494,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
                     # if there is no mask and no payload we are done
                     if self.length <= 0:
                         try:
-                            self._handlePacket()
+                            self._handle_packet()
                         finally:
                             self.state = HEADERB1
                             self.data = bytearray()
@@ -516,7 +516,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
                 # if there is no mask and no payload we are done
                 if self.length <= 0:
                     try:
-                        self._handlePacket()
+                        self._handle_packet()
                     finally:
                         self.state = HEADERB1
                         self.data = bytearray()
@@ -541,7 +541,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
             # check if we have processed length bytes; if so we are done
             if (self.index + 1) == self.length:
                 try:
-                    self._handlePacket()
+                    self._handle_packet()
                 finally:
                     # self.index = 0
                     self.state = HEADERB1
@@ -553,20 +553,20 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
 class WebSocketServer(object):
     request_queue_size = 5
 
-    def __init__(self, host, port, websocketclass, selectInterval=0.1):
+    def __init__(self, host, port, websocketclass, select_interval=0.1):
         self.websocketclass = websocketclass
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.serversocket.bind((host, port))
         self.serversocket.listen(self.request_queue_size)
-        self.selectInterval = selectInterval
+        self.selectInterval = select_interval
         self.connections = {}
         self.listeners = [self.serversocket]
 
-    def _decorateSocket(self, sock):  # pylint: disable=no-self-use
+    def _decorate_socket(self, sock):  # pylint: disable=no-self-use
         return sock
 
-    def _constructWebSocket(self, sock, address):
+    def _construct_websocket(self, sock, address):
         return self.websocketclass(self, sock, address)
 
     def close(self):
@@ -578,10 +578,10 @@ class WebSocketServer(object):
 
     def _handle_close(self, client):  # pylint: disable=no-self-use
         client.client.close()
-        # only call handleClose when we have a successful websocket connection
+        # only call handle_close when we have a successful websocket connection
         if client.handshaked:
             try:
-                client.handleClose()
+                client.handle_close()
             except Exception:  # pylint: disable=broad-except
                 pass
 
@@ -595,16 +595,16 @@ class WebSocketServer(object):
                 writers.append(fileno)
 
         if self.selectInterval:
-            rList, wList, xList = select(self.listeners, writers, self.listeners, self.selectInterval)
+            r_list, w_list, x_list = select(self.listeners, writers, self.listeners, self.selectInterval)
         else:
-            rList, wList, xList = select(self.listeners, writers, self.listeners)
+            r_list, w_list, x_list = select(self.listeners, writers, self.listeners)
 
-        for ready in wList:
+        for ready in w_list:
             client = self.connections[ready]
             try:
                 while client.sendq:
                     opcode, payload = client.sendq.popleft()
-                    remaining = client._sendBuffer(payload)  # pylint: disable=protected-access
+                    remaining = client._send_buffer(payload)  # pylint: disable=protected-access
                     if remaining is not None:
                         client.sendq.appendleft((opcode, remaining))
                         break
@@ -617,15 +617,15 @@ class WebSocketServer(object):
                 del self.connections[ready]
                 self.listeners.remove(ready)
 
-        for ready in rList:
+        for ready in r_list:
             if ready == self.serversocket:
                 sock = None
                 try:
                     sock, address = self.serversocket.accept()
-                    newsock = self._decorateSocket(sock)
+                    newsock = self._decorate_socket(sock)
                     newsock.setblocking(0)  # pylint: disable=no-member
                     fileno = newsock.fileno()  # pylint: disable=no-member
-                    self.connections[fileno] = self._constructWebSocket(newsock, address)
+                    self.connections[fileno] = self._construct_websocket(newsock, address)
                     self.listeners.append(fileno)
                 except Exception:  # pylint: disable=broad-except
                     if sock is not None:
@@ -635,13 +635,13 @@ class WebSocketServer(object):
                     continue
                 client = self.connections[ready]
                 try:
-                    client._handleData()  # pylint: disable=protected-access
+                    client._handle_data()  # pylint: disable=protected-access
                 except Exception:  # pylint: disable=broad-except
                     self._handle_close(client)
                     del self.connections[ready]
                     self.listeners.remove(ready)
 
-        for failed in xList:
+        for failed in x_list:
             if failed == self.serversocket:
                 self.close()
                 raise Exception('server socket failed')
@@ -661,17 +661,17 @@ class WebSocketServer(object):
 class SSLWebSocketServer(WebSocketServer):
     # pylint: disable=too-many-arguments
     def __init__(self, host, port, websocketclass, certfile, keyfile,
-                 version=ssl.PROTOCOL_TLSv1, selectInterval=0.1):
-        WebSocketServer.__init__(self, host, port, websocketclass, selectInterval)
+                 version=ssl.PROTOCOL_TLSv1, select_interval=0.1):
+        WebSocketServer.__init__(self, host, port, websocketclass, select_interval)
 
         self.context = ssl.SSLContext(version)
         self.context.load_cert_chain(certfile, keyfile)
 
-    def _decorateSocket(self, sock):
+    def _decorate_socket(self, sock):
         sslsock = self.context.wrap_socket(sock, server_side=True)
         return sslsock
 
-    def _constructWebSocket(self, sock, address):
+    def _construct_websocket(self, sock, address):
         ws = self.websocketclass(self, sock, address)
         ws.usingssl = True
         return ws
