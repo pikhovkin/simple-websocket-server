@@ -92,13 +92,13 @@ Chat Server (open up multiple *tests/websocket.html* files)
 
 2) Run the secure TSL/SSL server (in this case the cert.pem file is in the same directory)
 
-        python tests/example_server.py --example chat --ssl 1 --cert ./cert.pem
+        python tests/example_server.py --example chat --ssl 1
 
 3) Offer the certificate to the browser by serving *tests/websocket.html* through https.
 The HTTPS server will look for cert.pem in the local directory.
 Ensure the *tests/websocket.html* is also in the same directory to where the server is run.
 
-        python SimpleHTTPSServer.py
+        python tests/simple_https_server.py
 
 4) Open a web browser to: *https://localhost:443/tests/websocket.html*
 
@@ -108,23 +108,23 @@ Note: if you are having problems connecting, ensure that the certificate is adde
 
 #### For the Programmers
 
-handleConnected: called when handshake is complete
+connected: called when handshake is complete
  - self.address: TCP address port tuple of the endpoint
 
-handleClose: called when the endpoint is closed or there is an error
+handle_close: called when the endpoint is closed or there is an error
  - self.address: TCP address port tuple of the endpoint
 
-handleMessage: gets called when there is an incoming message from the client endpoint
+handle: gets called when there is an incoming message from the client endpoint
  - self.address: TCP address port tuple of the endpoint
  - self.opcode: the WebSocket frame type (STREAM, TEXT, BINARY)
  - self.data: bytearray (BINARY frame) or unicode string payload (TEXT frame)  
  - self.request: HTTP details from the WebSocket handshake (refer to BaseHTTPRequestHandler)
 
-sendMessage: send some text or binary data to the client endpoint
+send_message: send some text or binary data to the client endpoint
  - sending data as a unicode object will send a TEXT frame
  - sending data as a bytearray object will send a BINARY frame
 
-sendClose: send close frame to endpoint
+close: send close frame to endpoint
 
 ### Licensing
 
