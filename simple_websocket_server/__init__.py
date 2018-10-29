@@ -21,8 +21,7 @@ else:
 
 __all__ = [
     'WebSocket',
-    'WebSocketServer',
-    'SSLWebSocketServer'
+    'WebSocketServer'
 ]
 
 
@@ -553,7 +552,9 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
 class WebSocketServer(object):
     request_queue_size = 5
 
-    def __init__(self, host, port, websocketclass, select_interval=0.1):
+    # pylint: disable=too-many-arguments
+    def __init__(self, host, port, websocketclass, certfile=None, keyfile=None,
+                 ssl_version=ssl.PROTOCOL_TLSv1, select_interval=0.1):
         self.websocketclass = websocketclass
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -563,11 +564,24 @@ class WebSocketServer(object):
         self.connections = {}
         self.listeners = [self.serversocket]
 
+        self._using_ssl = bool(certfile and keyfile)
+
+        if self._using_ssl:
+            self.context = ssl.SSLContext(ssl_version)
+            self.context.load_cert_chain(certfile, keyfile)
+
     def _decorate_socket(self, sock):  # pylint: disable=no-self-use
+        if self._using_ssl:
+            return self.context.wrap_socket(sock, server_side=True)
+
         return sock
 
     def _construct_websocket(self, sock, address):
-        return self.websocketclass(self, sock, address)
+        ws = self.websocketclass(self, sock, address)
+        if self._using_ssl:
+            ws.usingssl = True
+
+        return ws
 
     def close(self):
         self.serversocket.close()
@@ -656,22 +670,3 @@ class WebSocketServer(object):
     def serve_forever(self):
         while True:
             self.handle_request()
-
-
-class SSLWebSocketServer(WebSocketServer):
-    # pylint: disable=too-many-arguments
-    def __init__(self, host, port, websocketclass, certfile, keyfile,
-                 version=ssl.PROTOCOL_TLSv1, select_interval=0.1):
-        WebSocketServer.__init__(self, host, port, websocketclass, select_interval)
-
-        self.context = ssl.SSLContext(version)
-        self.context.load_cert_chain(certfile, keyfile)
-
-    def _decorate_socket(self, sock):
-        sslsock = self.context.wrap_socket(sock, server_side=True)
-        return sslsock
-
-    def _construct_websocket(self, sock, address):
-        ws = self.websocketclass(self, sock, address)
-        ws.usingssl = True
-        return ws

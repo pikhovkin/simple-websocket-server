@@ -5,7 +5,7 @@ import sys
 import ssl
 from optparse import OptionParser
 
-from simple_websocket_server import WebSocket, WebSocketServer, SSLWebSocketServer
+from simple_websocket_server import WebSocket, WebSocketServer
 
 
 class SimpleEcho(WebSocket):
@@ -51,10 +51,11 @@ if __name__ == '__main__':
     if options.example == 'chat':
         cls = SimpleChat
 
+    sslopts = {}
     if options.ssl == 1:
-        server = SSLWebSocketServer(options.host, options.port, cls, options.cert, options.key, version=options.ver)
-    else:
-        server = WebSocketServer(options.host, options.port, cls)
+        sslopts = dict(certfile=options.cert, keyfile=options.key, ssl_version=options.ver)
+
+    server = WebSocketServer(options.host, options.port, cls, **sslopts)
 
     def close_sig_handler(signal, frame):
         server.close()
