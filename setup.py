@@ -10,6 +10,7 @@ setup(
     license='MIT',
     description=('A simple WebSocket server'),
     long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     url='https://github.com/pikhovkin/simple-websocket-server',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
