@@ -44,7 +44,7 @@ jobs:
     docker:
       - image: circleci/python:3.6-stretch-browsers
         environment:
-          PYLINTRC: .pylintrc
+          PYLINTRC: .pylintrc37
           TOX: py36
           TOX_PYTHON_36: python
 
@@ -57,6 +57,24 @@ jobs:
         TOX: py37
         TOX_PYTHON_37: python
 
+  "python-3.8":
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.8-stretch-browsers
+        environment:
+          PYLINTRC38: .pylintrc37
+          TOX: py38
+          TOX_PYTHON_38: python
+
+  "python-3.9":
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.9-stretch-browsers
+        environment:
+          PYLINTRC39: .pylintrc37
+          TOX: py39
+          TOX_PYTHON_39: python
+
 workflows:
   version: 2
   build:
@@ -64,3 +82,5 @@ workflows:
       - "python-2.7"
       - "python-3.6"
       - "python-3.7"
+      - "python-3.8"
+      - "python-3.9"

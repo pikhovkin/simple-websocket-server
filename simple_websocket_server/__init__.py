@@ -34,6 +34,15 @@ HANDSHAKE_STR = (
     'Sec-WebSocket-Accept: %(acceptstr)s\r\n\r\n'
 )
 
+FAILED_HANDSHAKE_STR = (
+    'HTTP/1.1 426 Upgrade Required\r\n'
+    'Upgrade: WebSocket\r\n'
+    'Connection: Upgrade\r\n'
+    'Sec-WebSocket-Version: 13\r\n'
+    'Content-Type: text/plain\r\n\r\n'
+    'This service requires use of the WebSocket protocol\r\n'
+)
+
 GUID_STR = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 
 STREAM = 0x0
@@ -168,8 +177,6 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
                 status = 1002
 
             self.close(status, reason)
-
-            return
         elif self.fin == 0:
             if self.opcode != STREAM:
                 if self.opcode == PING or self.opcode == PONG:
@@ -238,30 +245,31 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
             data = self.client.recv(self.headertoread)
             if not data:
                 raise Exception('remote socket closed')
-            else:
-                # accumulate
-                self.headerbuffer.extend(data)
 
-                if len(self.headerbuffer) >= self.maxheader:
-                    raise Exception('header exceeded allowable size')
+            # accumulate
+            self.headerbuffer.extend(data)
 
-                # indicates end of HTTP header
-                if b'\r\n\r\n' in self.headerbuffer:
-                    self.request = HTTPRequest(self.headerbuffer)
+            if len(self.headerbuffer) >= self.maxheader:
+                raise Exception('header exceeded allowable size')
 
-                    # handshake rfc 6455
-                    try:
-                        key = self.request.headers['Sec-WebSocket-Key']
-                        k = key.encode('ascii') + GUID_STR.encode('ascii')
-                        k_s = base64.b64encode(hashlib.sha1(k).digest()).decode('ascii')
-                        hs = HANDSHAKE_STR % {'acceptstr': k_s}
-                        self.sendq.append((BINARY, hs.encode('ascii')))
-                        self.handshaked = True
-                        self.connected()
-                    except Exception as e:
-                        raise Exception('handshake failed: {}'.format(e))
+            # indicates end of HTTP header
+            if b'\r\n\r\n' in self.headerbuffer:
+                self.request = HTTPRequest(self.headerbuffer)
 
-        # else do normal data
+                # handshake rfc 6455
+                try:
+                    key = self.request.headers['Sec-WebSocket-Key']
+                    k = key.encode('ascii') + GUID_STR.encode('ascii')
+                    k_s = base64.b64encode(hashlib.sha1(k).digest()).decode('ascii')
+                    hs = HANDSHAKE_STR % {'acceptstr': k_s}
+                    self.sendq.append((BINARY, hs.encode('ascii')))
+                    self.handshaked = True
+                    self.connected()
+                except Exception as e:
+                    hs = FAILED_HANDSHAKE_STR
+                    self._send_buffer(hs.encode('ascii'), True)
+                    self.client.close()
+                    raise Exception('handshake failed: {}'.format(e))
         else:
             data = self.client.recv(16384)
             if not data:
@@ -556,11 +564,15 @@ class WebSocketServer(object):
     def __init__(self, host, port, websocketclass, certfile=None, keyfile=None,
                  ssl_version=ssl.PROTOCOL_TLSv1, select_interval=0.1):
         self.websocketclass = websocketclass
-        self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if host == '':
+            host = None
+        fam = socket.AF_INET6 if host is None else 0
+        host_info = socket.getaddrinfo(host, port, fam, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_PASSIVE)
+        self.serversocket = socket.socket(host_info[0][0], host_info[0][1], host_info[0][2])
         self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.serversocket.bind((host, port))
+        self.serversocket.bind(host_info[0][4])
         self.serversocket.listen(self.request_queue_size)
-        self.selectInterval = select_interval
+        self.select_interval = select_interval
         self.connections = {}
         self.listeners = [self.serversocket]
 
@@ -608,8 +620,8 @@ class WebSocketServer(object):
             if client.sendq:
                 writers.append(fileno)
 
-        if self.selectInterval:
-            r_list, w_list, x_list = select(self.listeners, writers, self.listeners, self.selectInterval)
+        if self.select_interval:
+            r_list, w_list, x_list = select(self.listeners, writers, self.listeners, self.select_interval)
         else:
             r_list, w_list, x_list = select(self.listeners, writers, self.listeners)
 
@@ -622,9 +634,9 @@ class WebSocketServer(object):
                     if remaining is not None:
                         client.sendq.appendleft((opcode, remaining))
                         break
-                    else:
-                        if opcode == CLOSE:
-                            raise Exception('received client close')
+
+                    if opcode == CLOSE:
+                        raise Exception('received client close')
 
             except Exception:  # pylint: disable=broad-except
                 self._handle_close(client)
@@ -637,7 +649,7 @@ class WebSocketServer(object):
                 try:
                     sock, address = self.serversocket.accept()
                     newsock = self._decorate_socket(sock)
-                    newsock.setblocking(0)  # pylint: disable=no-member
+                    newsock.setblocking(False)  # pylint: disable=no-member
                     fileno = newsock.fileno()  # pylint: disable=no-member
                     self.connections[fileno] = self._construct_websocket(newsock, address)
                     self.listeners.append(fileno)
@@ -659,13 +671,13 @@ class WebSocketServer(object):
             if failed == self.serversocket:
                 self.close()
                 raise Exception('server socket failed')
-            else:
-                if failed not in self.connections:
-                    continue
-                client = self.connections[failed]
-                self._handle_close(client)
-                del self.connections[failed]
-                self.listeners.remove(failed)
+
+            if failed not in self.connections:
+                continue
+            client = self.connections[failed]
+            self._handle_close(client)
+            del self.connections[failed]
+            self.listeners.remove(failed)
 
     def serve_forever(self):
         while True:
