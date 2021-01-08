@@ -62,7 +62,7 @@ jobs:
     docker:
       - image: circleci/python:3.8.7
         environment:
-          PYLINTRC38: .pylintrc37
+          PYLINTRC37: .pylintrc37
           TOX: py38
           TOX_PYTHON_38: python
 
@@ -71,7 +71,7 @@ jobs:
     docker:
       - image: circleci/python:3.9.0
         environment:
-          PYLINTRC39: .pylintrc37
+          PYLINTRC37: .pylintrc37
           TOX: py39
           TOX_PYTHON_39: python
 
