@@ -1,5 +1,6 @@
 # A simple WebSocket server
 
+[![GitHub Actions](https://github.com/pikhovkin/simple-websocket-server/workflows/build/badge.svg)](https://github.com/pikhovkin/simple-websocket-server/actions)
 [![CircleCI](https://img.shields.io/circleci/project/github/pikhovkin/simple-websocket-server.svg)](https://circleci.com/gh/pikhovkin/simple-websocket-server)
 [![PyPI](https://img.shields.io/pypi/v/simple-websocket-server.svg)](https://pypi.org/project/simple-websocket-server/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/simple-websocket-server.svg)
@@ -117,7 +118,7 @@ handle_close: called when the endpoint is closed or there is an error
 handle: gets called when there is an incoming message from the client endpoint
  - self.address: TCP address port tuple of the endpoint
  - self.opcode: the WebSocket frame type (STREAM, TEXT, BINARY)
- - self.data: bytearray (BINARY frame) or unicode string payload (TEXT frame)  
+ - self.data: bytearray (BINARY frame) or unicode string payload (TEXT frame)
  - self.request: HTTP details from the WebSocket handshake (refer to BaseHTTPRequestHandler)
 
 send_message: send some text or binary data to the client endpoint
