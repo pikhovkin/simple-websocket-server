@@ -1,7 +1,6 @@
 # A simple WebSocket server
 
 [![GitHub Actions](https://github.com/pikhovkin/simple-websocket-server/workflows/build/badge.svg)](https://github.com/pikhovkin/simple-websocket-server/actions)
-[![CircleCI](https://img.shields.io/circleci/project/github/pikhovkin/simple-websocket-server.svg)](https://circleci.com/gh/pikhovkin/simple-websocket-server)
 [![PyPI](https://img.shields.io/pypi/v/simple-websocket-server.svg)](https://pypi.org/project/simple-websocket-server/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/simple-websocket-server.svg)
 [![PyPI - License](https://img.shields.io/pypi/l/simple-websocket-server.svg)](./LICENSE)
