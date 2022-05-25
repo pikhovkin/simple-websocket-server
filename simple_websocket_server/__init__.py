@@ -570,9 +570,6 @@ class WebSocketServer(object):
         host_info = socket.getaddrinfo(host, port, fam, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_PASSIVE)
         self.serversocket = socket.socket(host_info[0][0], host_info[0][1], host_info[0][2])
         self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # if host is None:
-        #
-        #     self.serversocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
         self.serversocket.bind(host_info[0][4])
         self.serversocket.listen(self.request_queue_size)
         self.select_interval = select_interval
