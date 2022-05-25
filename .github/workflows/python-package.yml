@@ -1,0 +1,81 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  release:
+    types: [created]
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [2.7, 3.6, 3.7, 3.8, 3.9, 3.10.0]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Display Python version
+      run: python -c "import sys; print(sys.version)"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pylint websocket-client
+    - name: Test
+      run: |
+        python -m unittest tests.test_servers
+        flake8 simple_websocket_server setup.py
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: [2.7, 3.6, 3.7, 3.8, 3.9, 3.10.0]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Display Python version
+      run: python -c "import sys; print(sys.version)"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pylint websocket-client
+    - name: Test
+      run: |
+        python -m unittest tests.test_servers
+        flake8 simple_websocket_server setup.py
+
+#  deploy:
+#    needs: [build-ubuntu, build-windows]
+#
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v2
+#    - name: Set up Python
+#      uses: actions/setup-python@v2
+#      with:
+#        python-version: '3.x'
+#    - name: Install dependencies
+#      run: |
+#        python -m pip install --upgrade pip
+#        pip install setuptools wheel twine
+#    - name: Build and publish
+#      env:
+#        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+#        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+#      run: |
+#        python setup.py sdist bdist_wheel
+#        twine upload dist/*

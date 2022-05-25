@@ -564,12 +564,15 @@ class WebSocketServer(object):
     def __init__(self, host, port, websocketclass, certfile=None, keyfile=None,
                  ssl_version=ssl.PROTOCOL_TLSv1, select_interval=0.1):
         self.websocketclass = websocketclass
-        if host == '':
-            host = None
+        if not host:
+            host = '127.0.0.1'
         fam = socket.AF_INET6 if host is None else 0
         host_info = socket.getaddrinfo(host, port, fam, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_PASSIVE)
         self.serversocket = socket.socket(host_info[0][0], host_info[0][1], host_info[0][2])
         self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # if host is None:
+        #
+        #     self.serversocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
         self.serversocket.bind(host_info[0][4])
         self.serversocket.listen(self.request_queue_size)
         self.select_interval = select_interval
