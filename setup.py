@@ -9,7 +9,7 @@ setup(
     packages=find_packages(exclude=['tests*']),
     license='MIT',
     description=('A simple WebSocket server'),
-    long_description=open('README.md').read(),
+    long_description=open('README.md').read(),  # pylint: disable=consider-using-with, unspecified-encoding
     long_description_content_type='text/markdown',
     url='https://github.com/pikhovkin/simple-websocket-server',
     classifiers=[

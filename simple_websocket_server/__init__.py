@@ -147,7 +147,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
             pass
         elif self.opcode == BINARY:
             pass
-        elif self.opcode == PONG or self.opcode == PING:
+        elif self.opcode in (PONG, PING):
             if len(self.data) > 125:
                 raise Exception('control frame length can not be > 125')
         else:
@@ -179,7 +179,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
             self.close(status, reason)
         elif self.fin == 0:
             if self.opcode != STREAM:
-                if self.opcode == PING or self.opcode == PONG:
+                if self.opcode in (PING, PONG):
                     raise Exception('control messages can not be fragmented')
 
                 self.frag_type = self.opcode
@@ -269,7 +269,7 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
                     hs = FAILED_HANDSHAKE_STR
                     self._send_buffer(hs.encode('ascii'), True)
                     self.client.close()
-                    raise Exception('handshake failed: {}'.format(e))
+                    raise Exception('handshake failed: {}'.format(e))  # pylint: disable=consider-using-f-string
         else:
             data = self.client.recv(16384)
             if not data:
