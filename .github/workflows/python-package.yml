@@ -22,9 +22,6 @@ jobs:
           - python-version: 2.7
             pylintrc: .pylintrc
           - os: windows-latest
-            python-version: 2.7
-            pylintrc: .pylintrc
-          - os: windows-latest
             python-version: 3.7
             pylintrc: .pylintrc37
 
