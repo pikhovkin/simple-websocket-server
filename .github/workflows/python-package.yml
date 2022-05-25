@@ -34,7 +34,7 @@ jobs:
       run: |
         python -m unittest tests.test_servers
         flake8 simple_websocket_server setup.py
-        if [ ${{ matrix.python-version }} == "2.7" ]; then pylint simple_websocket_server setup.py --rcfile=.pylintrc; else pylint simple_websocket_server setup.py --rcfile=.pylintrc37; fi
+        if [ ${{ matrix.python-version }} == 2.7 ]; then pylint simple_websocket_server setup.py --rcfile=.pylintrc; else pylint simple_websocket_server setup.py --rcfile=.pylintrc37; fi
 
   build-windows:
     runs-on: windows-latest
@@ -58,7 +58,7 @@ jobs:
       run: |
         python -m unittest tests.test_servers
         flake8 simple_websocket_server setup.py
-        if [ ${{ matrix.python-version }} == "2.7" ]; then pylint simple_websocket_server setup.py --rcfile=.pylintrc; else pylint simple_websocket_server setup.py --rcfile=.pylintrc37; fi
+        if [ ${{ matrix.python-version }} == 2.7 ]; then pylint simple_websocket_server setup.py --rcfile=.pylintrc; else pylint simple_websocket_server setup.py --rcfile=.pylintrc37; fi
 
 #  deploy:
 #    needs: [build-ubuntu, build-windows]
