@@ -39,9 +39,9 @@ jobs:
       env:
         PYLINTRC: ${{ matrix.pylintrc }}
       run: |
-        python -m unittest tests.test_servers
+        pylint simple_websocket_server setup.py --rcfile="$PYLINTRC"
         flake8 simple_websocket_server setup.py
-        pylint simple_websocket_server setup.py --rcfile=$PYLINTRC
+        python -m unittest tests.test_servers
 
 #  deploy:
 #    needs: [build]
