@@ -12,12 +12,17 @@ on:
     types: [created]
 
 jobs:
-  build-ubuntu:
-    runs-on: ubuntu-latest
+  build:
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: [2.7, 3.6, 3.7, 3.8, 3.9, 3.10.0]
+        include:
+          - pylintrc: .pylintrc37
+          - python-version: 2.7
+            pylintrc: .pylintrc
 
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -31,37 +36,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pylint websocket-client
     - name: Test
+      env:
+        PYLINTRC: ${{ matrix.pylintrc }}
       run: |
         python -m unittest tests.test_servers
         flake8 simple_websocket_server setup.py
-        if [ ${{ matrix.python-version }} == 2.7 ]; then pylint simple_websocket_server setup.py --rcfile=.pylintrc; else pylint simple_websocket_server setup.py --rcfile=.pylintrc37; fi
-
-  build-windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        python-version: [2.7, 3.6, 3.7, 3.8, 3.9, 3.10.0]
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Display Python version
-      run: python -c "import sys; print(sys.version)"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pylint websocket-client
-    - name: Test
-      run: |
-        python -m unittest tests.test_servers
-        flake8 simple_websocket_server setup.py
-        if [ ${{ matrix.python-version }} == 2.7 ]; then pylint simple_websocket_server setup.py --rcfile=.pylintrc; else pylint simple_websocket_server setup.py --rcfile=.pylintrc37; fi
+        pylint simple_websocket_server setup.py --rcfile=$PYLINTRC
 
 #  deploy:
-#    needs: [build-ubuntu, build-windows]
+#    needs: [build]
 #
 #    runs-on: ubuntu-latest
 #    steps:
