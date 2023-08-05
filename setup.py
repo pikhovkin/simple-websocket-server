@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='simple-websocket-server',
-    version='0.4.2',
+    version='0.4.3',
     author='Sergei Pikhovkin',
     author_email='s@pikhovkin.ru',
     packages=find_packages(exclude=['tests*']),
@@ -27,5 +27,10 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
-    ]
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+    ],
+    keywords=[
+        'websocket-server', 'websocket', 'websockets', 'websocket-protocol', 'websocket-library',
+    ],
 )

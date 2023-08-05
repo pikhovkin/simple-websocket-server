@@ -16,13 +16,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: [2.7, 3.6, 3.7, 3.8, 3.9, 3.10.0]
+        python-version: ['2.7', '3.6', '3.7', '3.8', '3.9', '3.10', '3.11']
         include:
           - pylintrc: .pylintrc37
-          - python-version: 2.7
+          - python-version: '2.7'
             pylintrc: .pylintrc
           - os: windows-latest
-            python-version: 3.7
+            python-version: '3.7'
             pylintrc: .pylintrc37
 
     runs-on: ${{ matrix.os }}

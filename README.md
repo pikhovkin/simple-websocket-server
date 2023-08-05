@@ -90,7 +90,7 @@ Chat Server (open up multiple *tests/websocket.html* files)
 
         openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout key.pem
 
-2) Run the secure TSL/SSL server (in this case the cert.pem file is in the same directory)
+2) Run the secure TLS/SSL server (in this case the cert.pem file is in the same directory)
 
         python tests/example_server.py --example chat --ssl 1
 

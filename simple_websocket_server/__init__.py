@@ -242,7 +242,11 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
     def _handle_data(self):
         # do the HTTP header and handshake
         if self.handshaked is False:
-            data = self.client.recv(self.headertoread)
+            try:
+                data = self.client.recv(self.headertoread)
+            except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                # SSL socket not ready to read yet, wait and try again
+                return
             if not data:
                 raise Exception('remote socket closed')
 
@@ -271,9 +275,13 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
                     self.client.close()
                     raise Exception('handshake failed: {}'.format(e))  # pylint: disable=consider-using-f-string
         else:
-            data = self.client.recv(16384)
+            try:
+                data = self.client.recv(16384)
+            except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                # SSL socket not ready to read yet, wait and try again
+                return
             if not data:
-                raise Exception("remote socket closed")
+                raise Exception('remote socket closed')
 
             if VER >= 3:
                 for d in data:
@@ -317,6 +325,11 @@ class WebSocket(object):  # pylint: disable=too-many-instance-attributes
 
                 already_sent += sent
                 tosend -= sent
+            except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                # SSL socket not ready to send yet, wait and try again
+                if send_all:
+                    continue
+                return buff[already_sent:]
             except socket.error as e:
                 # if we have full buffers then wait for them to drain and try again
                 if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
@@ -562,7 +575,7 @@ class WebSocketServer(object):
 
     # pylint: disable=too-many-arguments
     def __init__(self, host, port, websocketclass, certfile=None, keyfile=None,
-                 ssl_version=ssl.PROTOCOL_TLSv1, select_interval=0.1):
+                 ssl_version=ssl.PROTOCOL_TLSv1_2, select_interval=0.1, ssl_context=None):
         self.websocketclass = websocketclass
         if not host:
             host = '127.0.0.1'
@@ -576,11 +589,12 @@ class WebSocketServer(object):
         self.connections = {}
         self.listeners = [self.serversocket]
 
-        self._using_ssl = bool(certfile and keyfile)
-
-        if self._using_ssl:
+        self._using_ssl = bool(ssl_context or (certfile and keyfile))
+        if ssl_context is None and self._using_ssl:
             self.context = ssl.SSLContext(ssl_version)
             self.context.load_cert_chain(certfile, keyfile)
+        else:
+            self.context = ssl_context
 
     def _decorate_socket(self, sock):  # pylint: disable=no-self-use
         if self._using_ssl:
