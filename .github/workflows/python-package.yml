@@ -44,6 +44,7 @@ jobs:
         python -m unittest tests.test_servers
 
   deploy:
+    if: github.event_name == 'release' && github.event.action == 'created'
     needs: [build]
 
     runs-on: ubuntu-latest
